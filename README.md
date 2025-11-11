@@ -46,3 +46,10 @@ Final Position: 50.0% (perfect tracking)
 
 ---
 *Completed as part of embedded systems portfolio development - Day 1 of 12-week learning plan*
+
+## Performance Results
+
+![Day 1 Perfect Tracking](screenshots/day1_perfect_tracking.png)
+
+Settling Time: 7.09 seconds
+Steady-State Error: 0.0%
