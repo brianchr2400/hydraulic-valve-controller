@@ -45,6 +45,14 @@ int main()
   
     HydraulicSystem system;
 
+    //Open CSV log file
+    FILE* log_file = fopen("control_log.csv", "w");
+    if (log_file == NULL) {
+        printf("Error opening log file!\n");
+        return -1;
+    }
+    fprintf(log_file, "Time,Setpoint,Position,Error,Command\n");
+
     // 1. Initialize system
    
     // Initialize PID controller
@@ -72,19 +80,33 @@ int main()
     // 3.Main control loop
     float dt = system.pid.sample_time;
 
-    while (system.running && system.current_time < 10.0f) { // Run for 10 seconds
+    while (system.running && system.current_time < 30.0f) { // Run for 10 seconds
+        
+        // Add setpoint changes at specific times
+        if (system.current_time >= 10.0f && system.current_time < 10.01f) 
+        {
+            pid_set_setpoint(&system.pid, 75.0f); // Change setpoint to 80% at 5s
+            printf("\n>>> Setpoint changed to 75.0%% <<<\n\n");
+        }
+
+        if (system.current_time >= 20.0f && system.current_time < 20.01f) 
+        {
+            pid_set_setpoint(&system.pid, 25.0f); // Change setpoint to 25% at 10s
+            printf("\n>>> Setpoint changed to 25.0%% <<<\n\n");
+        }
+        
         // a. Read current valve 
 
         // b. Compute PID output
         float control_signal = pid_compute(&system.pid, system.valve.position);
 
         // ADD THIS DEBUG LINE:
-        if (system.current_time > 9.0f) {
+        /*if (system.current_time > 9.0f) {
             printf("DEBUG: integral=%.2f, error=%.2f, raw_output=%.2f\n", 
                     system.pid.integral, 
                     50.0 - system.valve.position, 
                     control_signal);
-        }
+        }*/
 
         // Clamp control signal to  valid valve range [0, 100]%
         if (control_signal < 0.0f) control_signal = 0.0f;
@@ -98,8 +120,18 @@ int main()
         system.position_error = system.pid.setpoint - system.valve.position;
         system.control_effort = control_signal;
 
-        // e. Print status every 100ms
-        printf("%.2f      %.1f     %.1f      %.1f       %.1f\n",
+        // e. Print status every 500ms
+        if (fmod(system.current_time, 0.5f) < 0.01f) 
+        {
+            printf("%.2f      %.1f     %.1f      %.1f       %.1f\n",
+                system.current_time, 
+                system.pid.setpoint,
+                system.valve.position, 
+                system.position_error, 
+                system.control_effort);
+        }
+
+        fprintf(log_file, "%.2f,%.1f,%.1f,%.1f,%.1f\n",
                 system.current_time, 
                 system.pid.setpoint,
                 system.valve.position, 
@@ -115,6 +147,10 @@ int main()
     printf("Final Position: %.1f%%\n", system.valve.position);
     printf("Final Error: %.1f%%\n", system.position_error);
     printf("Run Time: %.2f seconds\n", system.current_time);
+
+    // Close log file
+    fclose(log_file);
+    printf("\nData logged to control_log.csv\n");
 
     return 0; 
 }
