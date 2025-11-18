@@ -16,9 +16,11 @@ void valve_init(ValveSimulator* valve, float time_constant, float deadband) {
 void valve_update(ValveSimulator* valve, float command, float dt) {
     valve->command = command;
 
+    // Apply disturbance to the effective command
+    float effective_command = valve->command + valve->disturbance;
+
     // First-order lag: position moves toward command exponentially
-    // Formula: dx/dt = (target - current) / time_constant
-    float position_change = (valve->command - valve->position) * (dt / valve->time_constant);
+    float position_change = (effective_command - valve->position) * (dt / valve->time_constant);
     
     // Update position
     valve->position += position_change;

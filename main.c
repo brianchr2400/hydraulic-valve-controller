@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include <math.h>
 #include "pid_controller.h"
 #include "valve_simulator.h"
@@ -51,6 +53,7 @@ int main()
         printf("Error opening log file!\n");
         return -1;
     }
+    srand(time(NULL)); // Seed random number generator
     fprintf(log_file, "Time,Setpoint,Position,Error,Command\n");
 
     // 1. Initialize system
@@ -65,6 +68,7 @@ int main()
     system.valve.time_constant = 0.2f; // seconds
     system.valve.deadband = 0.0f; // %
     system.valve.command = 0.0f;
+    system.valve.disturbance = 0.0f; // No disturbance initially
 
     system.running = true;
     system.current_time = 0.0f;
@@ -82,6 +86,32 @@ int main()
 
     while (system.running && system.current_time < 30.0f) { // Run for 10 seconds
         
+        // Apply disturbance at 5 seconds (sudden force)
+        if (system.current_time >= 5.0f && system.current_time < 5.01f) 
+        {
+            system.valve.disturbance = -10.0f; // S-10% push down
+            printf("\n>>> DISTURBANCE: -10%% force applied <<<\n\n");
+        }
+
+        // Remove disturbance at 8 seconds
+        if (system.current_time >= 8.0f && system.current_time < 8.01f) 
+        {
+            system.valve.disturbance = 0.0f; // Remove disturbance
+            printf("\n>>> DISTURBANCE: Removed <<<\n\n");
+        }
+
+        // Add another disturbance at 15 seconds
+        if (system.current_time >= 15.0f && system.current_time < 15.01f) {
+            system.valve.disturbance = 5.0f;  // +5% push up
+            printf("\n>>> DISTURBANCE: +5%% force applied <<<\n\n");
+        }
+        
+        // Remove at 18 seconds
+        if (system.current_time >= 18.0f && system.current_time < 18.01f) {
+            system.valve.disturbance = 0.0f;
+            printf("\n>>> DISTURBANCE: Removed <<<\n\n");
+        }
+
         // Add setpoint changes at specific times
         if (system.current_time >= 10.0f && system.current_time < 10.01f) 
         {
@@ -96,10 +126,14 @@ int main()
         }
         
         // a. Read current valve 
-
+        // After reading valve position, add small random noise
         // b. Compute PID output
-        float control_signal = pid_compute(&system.pid, system.valve.position);
+        
+        float noise = ((float)rand() / RAND_MAX - 0.5f) * 0.2f; // +/-0.1%
+        float noisy_measurement = system.valve.position + noise;
+        float control_signal = pid_compute(&system.pid, noisy_measurement);
 
+        
         // ADD THIS DEBUG LINE:
         /*if (system.current_time > 9.0f) {
             printf("DEBUG: integral=%.2f, error=%.2f, raw_output=%.2f\n", 
@@ -107,6 +141,10 @@ int main()
                     50.0 - system.valve.position, 
                     control_signal);
         }*/
+
+        
+
+        // Use nois
 
         // Clamp control signal to  valid valve range [0, 100]%
         if (control_signal < 0.0f) control_signal = 0.0f;

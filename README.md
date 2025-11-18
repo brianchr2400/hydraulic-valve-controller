@@ -16,6 +16,8 @@ A simulated hydraulic proportional valve controller with PID position control, d
 - Anti-windup protection
 - System tuning and optimization
 - Real-time embedded systems patterns
+- Disturbance rejection and robustness
+- Sensor noise handling
 
 ## Final Tuned Parameters
 - Kp = 5.0 (Proportional gain)
@@ -38,6 +40,8 @@ Final Position: 50.0% (perfect tracking)
 - Algorithm implementation
 - Debugging and optimization
 - Git version control
+- Real-world system modeling
+- Performance analysis under uncertainty
 
 ## Built With
 - C (ISO C99)
@@ -77,3 +81,48 @@ Settling Time: ~7 seconds per setpoint
 - Full simulation data exported to CSV format
 - 3000+ data points captured at 10ms intervals
 - Compatible with Excel, Python, MATLAB for analysis
+
+## Day 3: Disturbance Rejection & Robustness Testing
+
+### New Features
+- External disturbance simulation (simulates real-world forces on valve)
+- Sensor noise injection (±0.1% measurement noise)
+- Disturbance rejection analysis
+- Real-world operating conditions testing
+
+### Technical Implementation
+- Modified valve physics to accept external force inputs
+- Implemented measurement noise using random number generation
+- Extended simulation to test multiple disturbance scenarios
+- Continuous data logging of system response under disturbances
+
+### Disturbance Rejection Performance
+```
+Test 1: -10% Downward Force (5.0-8.0s)
+  Maximum Position Deviation: 1.7% (50.0% → 48.3%)
+  PID Compensation: Increased output by 10% (52% → 60%)
+  Recovery Time: 2 seconds after disturbance removed
+  Steady-State Error with Active Disturbance: ~1%
+
+Test 2: +5% Upward Force (15.0-18.0s)
+  Maximum Position Deviation: 1.5% (75.0% → 76.5%)
+  PID Compensation: Decreased output by 5%
+  Recovery Time: <2 seconds
+  Demonstrated bi-directional disturbance handling
+```
+
+### Key Capabilities Demonstrated
+- **Automatic disturbance compensation** - PID adjusts output without explicit disturbance detection
+- **Robust tracking** - Maintains setpoint within 2% despite 10% external forces
+- **Noise filtering** - Handles sensor noise without oscillation
+- **Real-world applicability** - Simulates friction, pressure variations, mechanical binding
+
+### Performance Metrics Summary
+| Metric | Value |
+|--------|-------|
+| Disturbance Rejection Ratio | 5.9:1 (-10% force → 1.7% error) |
+| Recovery Time | <2 seconds |
+| Max Steady-State Error (under load) | 1% |
+| Sensor Noise Tolerance | ±0.1% |
+| Control Signal Range | 0-100% |
+

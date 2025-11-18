@@ -12,6 +12,9 @@ typedef struct {
 
     // Command input
     float command; // Control signal from PID (-100 to +100%)
+    
+    // External disturbance
+    float disturbance; // External force a(%))
 } ValveSimulator;
 
 void valve_update(ValveSimulator* valve, float command, float dt);
