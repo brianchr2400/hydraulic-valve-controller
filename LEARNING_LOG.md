@@ -72,3 +72,161 @@ The integral term needs adequate time to eliminate steady-state error. With Ki=4
 ### Next Steps
 Day 3: Add disturbance rejection and test robustness
 
+## Day 3 - November 17-18, 2025
+
+### What I Built
+Extended PID controller with disturbance rejection and sensor noise simulation
+
+### What I Learned
+
+1. **Disturbance Rejection:**
+   - Disturbances affect the effective command, not position directly
+   - A -10% disturbance shifts the control signal by 10 percentage points
+   - PID automatically fights back by increasing output to compensate
+   - Time constant limits how fast the system responds to disturbances
+   - Position drop is much smaller than disturbance magnitude due to PID feedback
+
+2. **Control System Dynamics:**
+   - Disturbance creates a "tug-of-war" between PID and external forces
+   - System reaches equilibrium where PID output + disturbance = setpoint
+   - With -10% disturbance, PID increases output by ~10% to maintain position
+   - Real systems never reach perfect setpoint under constant disturbances
+
+3. **Measurement Noise:**
+   - Added ±0.1% random sensor noise for realism
+   - Noise causes command signal to fluctuate slightly
+   - PID filters out most noise effects through integral action
+   - Real sensors always have noise - perfect measurements don't exist
+
+4. **C Programming:**
+   - Critical importance of initializing all struct members
+   - Uninitialized variables contain garbage values causing unpredictable behavior
+   - Random number generation with `rand()` and `srand(time(NULL))`
+   - File I/O for continuous data logging
+
+### Challenges Overcome
+
+- **Initialization bug:** Forgot to initialize `disturbance` field, causing position to stay at 0%
+- **Understanding disturbance physics:** Initially confused why -10% disturbance didn't cause 5% position drop
+- **Learned:** Disturbances affect command signal, not position directly; PID compensates automatically
+- **Debugging:** Used CSV logs to trace through timesteps and understand valve dynamics
+
+### Performance Analysis
+
+**Disturbance Test Results:**
+- At 5.0s: Applied -10% downward disturbance
+  - Position dropped from 50.0% → 48.3% (1.7% maximum deviation)
+  - PID output increased from 52% → 60% to fight disturbance
+  - Recovered to ~49% and stabilized while disturbance active
+  
+- At 8.0s: Removed disturbance
+  - Position returned to 50.0% within 2 seconds
+  - PID output returned to normal ~50%
+
+- At 15.0s: Applied +5% upward disturbance
+  - Position increased from 75.0% → 76.5% (1.5% deviation)
+  - PID output decreased to compensate
+  - Clean recovery when disturbance removed
+
+### Key Takeaway
+
+Disturbance rejection is a fundamental capability of PID control. The controller doesn't need to "know" a disturbance is present - it automatically compensates by detecting the error and adjusting output. This is why PID controllers are so robust in real-world applications where external forces (friction, pressure changes, mechanical binding) constantly affect the system.
+
+The magnitude of disturbance doesn't directly equal position change because the PID feedback loop fights back immediately. A -10% disturbance causes only ~1.7% position error because the PID increases its output to compensate.
+
+### Time Spent
+~2-3 hours (including debugging initialization issue and understanding disturbance physics)
+
+### Next Steps
+Day 4: Performance tuning and optimization
+
+## Day 4 - November 18-19, 2025
+
+### What I Built
+PID tuning comparison framework with command-line parameter testing and systematic performance analysis
+
+### What I Learned
+
+1. **PID Tuning Trade-offs:**
+   - Faster response (higher Kp) risks overshoot and oscillation
+   - Aggressive tuning (Kp=8.0, Ki=6.0) was fastest (0.16s rise) but caused persistent oscillations
+   - Conservative tuning (Kp=3.0, Ki=2.0) was stable but extremely slow (1.1s rise, 3.57s settling)
+   - Baseline tuning (Kp=5.0, Ki=4.0, Kd=0.1) achieved best overall balance
+
+2. **Critical Role of Each Gain:**
+   - **Kp (Proportional):** Controls response speed but too high causes overshoot
+   - **Ki (Integral):** ESSENTIAL for eliminating steady-state error
+     - Ki=4.0 → 0% SS error ✓
+     - Ki=1.0 → 1.4% SS error (stuck forever!)
+   - **Kd (Derivative):** Dampens oscillations but too high prevents reaching target
+     - Kd=0.5 caused system to oscillate below setpoint with 4.1% error
+
+3. **Performance Metrics:**
+   - **Rise Time:** Speed to reach 95% of step change
+   - **Overshoot:** How far past setpoint (aggressive = 2%)
+   - **Settling Time:** Time to enter and stay in ±1% tolerance band
+   - **Steady-State Error:** Final tracking accuracy
+
+4. **C Programming:**
+   - Command-line argument parsing with argc/argv
+   - Dynamic filename generation with sprintf()
+   - Systematic testing methodology
+
+### Tuning Comparison Results
+
+| Tuning | Kp | Ki | Kd | Rise (s) | Overshoot (%) | Settling (s) | SS Error (%) |
+|--------|----|----|----|---------:|--------------:|-------------:|-------------:|
+| Baseline | 5.0 | 4.0 | 0.1 | 0.18 | 0 | 1.75 | 0 |
+| Aggressive | 8.0 | 6.0 | 0.2 | 0.16 | 2.0 | 3.37 | 0.6 (osc) |
+| Conservative | 3.0 | 2.0 | 0.05 | 1.10 | 0 | 3.57 | 0 |
+| High Derivative | 5.0 | 4.0 | 0.5 | 1.44 | 0 | Never | 4.1 (osc) |
+| Low Integral | 5.0 | 1.0 | 0.1 | 4.05 | 0 | Never | 1.4 |
+
+### Key Findings
+
+**Baseline (Kp=5.0, Ki=4.0, Kd=0.1) was optimal:**
+- Fast response (0.18s)
+- No overshoot
+- Fastest settling time (1.75s)
+- Zero steady-state error
+- Stable, no oscillations
+
+**Aggressive tuning failed despite fast rise time:**
+- Only 11% faster rise (0.16s vs 0.18s)
+- But 92% slower settling (3.37s vs 1.75s)
+- Persistent oscillations prevented true steady state
+- Trade-off not worth it
+
+**Too much derivative is harmful:**
+- Kd=0.5 over-damped the system
+- Never reached target (stuck at 71% oscillating)
+- 4.1% steady-state error
+
+**Integral gain is critical:**
+- Without sufficient Ki, steady-state error persists forever
+- Ki=1.0 left system stuck at 1.4% error
+- Integral term is non-negotiable for precision control
+
+### Challenges Overcome
+
+- **Measurement methodology:** Learned precise definitions of rise time, settling time, and overshoot
+- **Oscillating systems:** Developed approach to report SS error for unstable systems
+- **Data analysis:** Analyzed 7,500 data points across 5 tests (1,500 per test)
+- **Pattern recognition:** Identified that "faster" doesn't mean "better overall performance"
+
+### Key Takeaway
+
+PID tuning requires balance - there is no "universal best" gain set. The optimal tuning depends on application requirements:
+- Safety-critical: Baseline (no overshoot, stable)
+- High-speed production: Baseline (best overall settling time)
+- Precision positioning: Baseline (zero SS error)
+
+Aggressive tuning seems attractive (fast rise time) but creates more problems than it solves. The baseline gains (5.0, 4.0, 0.1) achieved the best overall performance by balancing all three terms effectively.
+
+More importantly: each gain has a specific job, and extreme values in any direction cause failure. PID tuning is about finding the sweet spot where P provides quick response, I eliminates error, and D prevents overshoot - all working together.
+
+### Time Spent
+~4-5 hours (code modifications, running tests, systematic analysis, learning proper measurement techniques)
+
+### Next Steps
+Day 5: Advanced features (adaptive control, filtering, or practical implementation considerations)

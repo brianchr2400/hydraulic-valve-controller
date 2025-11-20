@@ -126,3 +126,84 @@ Test 2: +5% Upward Force (15.0-18.0s)
 | Sensor Noise Tolerance | ±0.1% |
 | Control Signal Range | 0-100% |
 
+## Day 4: PID Tuning & Performance Optimization
+
+### Overview
+Systematic comparison of five different PID tuning strategies to understand gain trade-offs and optimize controller performance. Implemented command-line argument parsing for automated testing and developed rigorous performance analysis methodology.
+
+### New Features
+- Command-line parameter input (custom gains via argv)
+- Dynamic CSV filename generation based on gains
+- Automated testing framework for multiple configurations
+- Comprehensive performance metric analysis
+
+### Test Configurations
+
+| Configuration | Kp | Ki | Kd | Strategy |
+|---------------|----|----|----|----|
+| Baseline | 5.0 | 4.0 | 0.1 | Balanced performance |
+| Aggressive | 8.0 | 6.0 | 0.2 | Maximum speed |
+| Conservative | 3.0 | 2.0 | 0.05 | Maximum stability |
+| High Derivative | 5.0 | 4.0 | 0.5 | Overshoot prevention |
+| Low Integral | 5.0 | 1.0 | 0.1 | Minimal integral action |
+
+### Performance Comparison
+
+| Tuning | Rise Time (s) | Overshoot (%) | Settling Time (s) | SS Error (%) |
+|--------|---------------|---------------|-------------------|--------------|
+| **Baseline** | **0.18** | **0** | **1.75** | **0** |
+| Aggressive | 0.16 | 2.0 | 3.37 | 0.6 (osc) |
+| Conservative | 1.10 | 0 | 3.57 | 0 |
+| High Derivative | 1.44 | 0 | Never | 4.1 (osc) |
+| Low Integral | 4.05 | 0 | Never | 1.4 |
+
+### Key Insights
+
+**Baseline Tuning is Optimal**
+- Best overall performance across all metrics
+- 0% overshoot, 0% steady-state error
+- Fastest settling time (1.75s)
+- Stable with no oscillations
+
+**Aggressive Tuning Paradox**
+- 11% faster rise time but 92% slower settling
+- Creates persistent oscillations
+- "Fastest" response doesn't mean best performance
+
+**Critical Role of Integral Gain**
+- Ki=4.0: Perfect tracking (0% error)
+- Ki=1.0: System stuck at 1.4% error permanently
+- Integral term is essential for accuracy
+
+**Derivative Gain Limits**
+- Kd=0.1: Optimal damping
+- Kd=0.5: Over-damped, never reaches target
+- Too much derivative is as harmful as too little
+
+### Performance Metrics Definitions
+
+- **Rise Time:** Time to reach 95% of setpoint step (71.25% for 50→75% change)
+- **Overshoot:** Maximum excursion beyond setpoint as percentage of step size
+- **Settling Time:** Time to enter and remain within ±1% of setpoint
+- **Steady-State Error:** Final tracking error after system stabilizes
+
+### Tuning Recommendations
+
+**For Safety-Critical Systems:**
+- Use Baseline tuning (Kp=5.0, Ki=4.0, Kd=0.1)
+- Zero overshoot, stable response
+
+**For High-Speed Applications:**
+- Use Baseline tuning (fastest overall settling despite slightly slower rise)
+- Aggressive tuning's oscillations negate its rise time advantage
+
+**For Precision Positioning:**
+- Use Baseline tuning (zero steady-state error)
+- Ensure Ki ≥ 4.0 for error elimination
+
+### Technical Implementation
+- argc/argv command-line parsing
+- sprintf() for dynamic filename generation
+- Systematic test methodology
+- Excel-based data analysis workflow
+
