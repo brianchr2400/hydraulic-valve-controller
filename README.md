@@ -207,3 +207,98 @@ Systematic comparison of five different PID tuning strategies to understand gain
 - Systematic test methodology
 - Excel-based data analysis workflow
 
+## Day 5: Advanced PID Features
+
+### Overview
+Enhanced PID controller with industrial-grade features for noise rejection, mechanical protection, and smooth motion control. Implemented three critical features used in production control systems but rarely taught in academic settings.
+
+### Advanced Features Implemented
+
+#### 1. Derivative Filtering
+**Problem:** Raw derivative amplifies measurement noise  
+**Solution:** Low-pass filter smooths derivative term  
+**Configuration:** `pid_set_derivative_filter(pid, 0.1f);`  
+**Result:** Reduced noise sensitivity with slight overshoot trade-off
+
+#### 2. Output Rate Limiting
+**Problem:** Sudden command changes cause mechanical stress  
+**Solution:** Limit maximum output change per second  
+**Configuration:** `pid_set_rate_limit(pid, 20.0f);`  
+**Result:** Protected actuator from damaging command spikes
+
+#### 3. Setpoint Ramping
+**Problem:** Instant setpoint changes cause overshoot and jerky motion  
+**Solution:** Gradually transition setpoint at controlled rate  
+**Configuration:** `pid_set_ramp_rate(pid, 10.0f);`  
+**Result:** Zero overshoot, 92% reduction in peak error
+
+### Performance Comparison
+
+**50% → 75% Setpoint Change:**
+
+| Feature | Overshoot | Peak Error | Time to Target |
+|---------|-----------|------------|----------------|
+| Baseline (instant) | 0% | 22.7% | 1.5s |
+| With Filtering | 4.3% | 24.7% | 1.5s |
+| With Ramping | 0% | 1.9% | 4.2s |
+
+### Key Results
+
+**Derivative Filtering Impact:**
+- Filter coefficient α=0.1 (10% new, 90% old)
+- Reduces noise amplification
+- Introduces slight overshoot (4.3%)
+- Trade-off: noise immunity vs damping
+
+**Setpoint Ramping Impact:**
+- Ramp rate: 10%/second
+- Eliminates overshoot completely
+- Reduces peak error from 22.7% → 1.9%
+- Takes 2.8× longer but creates smooth motion
+- Ideal for safety-critical applications
+
+### Usage Example
+```c
+// Initialize PID with baseline gains
+pid_init(&pid, 5.0f, 4.0f, 0.1f, 0.01f);
+
+// Enable advanced features
+pid_set_derivative_filter(&pid, 0.1f);    // 10% filtering
+pid_set_rate_limit(&pid, 20.0f);          // 20%/second max change
+pid_set_ramp_rate(&pid, 10.0f);           // 10%/second setpoint ramp
+
+// Set initial setpoint
+pid_set_setpoint(&pid, 50.0f);
+
+// Later: Ramp to new setpoint
+pid_set_setpoint_ramped(&pid, 75.0f);     // Smooth transition
+```
+
+### Industrial Applications
+
+These features are standard in:
+- **Safety Systems:** Setpoint ramping prevents sudden motion
+- **High-Precision Positioning:** Derivative filtering handles sensor noise
+- **Large Actuators:** Rate limiting prevents mechanical damage
+- **Process Control:** All three features work together for smooth, stable control
+
+### Technical Insights
+
+**Why These Features Matter:**
+1. **Textbook PID** works in simulation with perfect sensors and ideal actuators
+2. **Real-world PID** needs protection against:
+   - Noisy measurements (derivative filtering)
+   - Mechanical limitations (rate limiting)  
+   - Safety requirements (setpoint ramping)
+
+**Design Philosophy:**
+- Features are modular (enable/disable independently)
+- Backward compatible (disabled by default)
+- Configurable per application
+- No performance penalty when disabled
+
+### Files Created
+
+- `test_advanced_features.c` - Derivative filtering and rate limiting test
+- `test_setpoint_ramping.c` - Setpoint ramping demonstration
+- Enhanced `pid_controller.c/h` - Core implementations

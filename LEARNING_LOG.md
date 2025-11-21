@@ -230,3 +230,122 @@ More importantly: each gain has a specific job, and extreme values in any direct
 
 ### Next Steps
 Day 5: Advanced features (adaptive control, filtering, or practical implementation considerations)
+
+## Day 5 - November 19, 2025
+
+### What I Built
+Industrial-grade PID controller enhancements with three advanced features: derivative filtering, output rate limiting, and setpoint ramping.
+
+### What I Learned
+
+1. **Derivative Filtering:**
+   - Raw derivative term amplifies measurement noise
+   - Low-pass filter smooths derivative: `filtered = α×new + (1-α)×old`
+   - Filter coefficient (α=0.1): 10% new value, 90% previous value
+   - **Trade-off:** Reduces noise sensitivity but introduces slight overshoot
+   - Without filtering: Susceptible to noise spikes
+   - With filtering (α=0.1): Slight 4.3% overshoot but stable operation
+
+2. **Output Rate Limiting:**
+   - Prevents sudden valve command changes that cause mechanical stress
+   - Limits maximum output change per second (e.g., 20%/second)
+   - Implementation: `if (change > max_change) output = prev + max_change`
+   - Critical for protecting physical actuators from damage
+   - Can slow down response but increases system safety
+
+3. **Setpoint Ramping:**
+   - Gradually transitions setpoint instead of instant jumps
+   - Eliminates overshoot completely (0% vs 4.3%)
+   - Creates smooth, controlled motion
+   - Ramp rate determines transition speed (10%/second = 2.5s for 25% change)
+   - **Key insight:** Smoother motion at the cost of response time
+
+4. **Real-World Control Systems:**
+   - Production controllers always include these features
+   - Not taught in textbooks but essential in practice
+   - Balance between performance and safety
+   - Features can be enabled/disabled based on application needs
+
+### Performance Comparison
+
+**Baseline vs Advanced Features:**
+
+| Metric | Instant Jump | With Filtering | With Ramping |
+|--------|--------------|----------------|--------------|
+| Overshoot (50%) | 0% | 4.3% | 0% |
+| Overshoot (75%) | 0% | 1.1% | 0% |
+| Time to 75% | 1.5s | 1.5s | 4.2s |
+| Max Error During Transition | 22.7% | 24.7% | 1.9% |
+| Mechanical Stress | High | High | Low |
+| Noise Sensitivity | High | Low | Low |
+
+### Implementation Details
+
+**Derivative Filtering:**
+```c
+float derivative_raw = (error - prev_error) / dt;
+derivative_filtered = α×derivative_raw + (1-α)×derivative_filtered;
+d_term = Kd × derivative_filtered;
+```
+
+**Output Rate Limiting:**
+```c
+max_change = rate_limit × dt;
+if (output_change > max_change) 
+    output = prev_output + max_change;
+```
+
+**Setpoint Ramping:**
+```c
+max_change = ramp_rate × dt;
+if (target - setpoint > max_change)
+    setpoint += max_change;
+```
+
+### Challenges Overcome
+
+- **Initial Python setup issues:** Attempted data visualization but encountered MSYS2 Python/pip complications
+- **Pivoted to C-based enhancements:** More productive than debugging Python environment
+- **Setpoint ramping bug:** Initially forgot to sync `setpoint` and `setpoint_target` in initialization
+  - Symptom: Setpoint ramped to 0% instead of staying at 50%
+  - Fix: Update both values in `pid_set_setpoint()`
+- **Understanding filter trade-offs:** Learned that filtering helps with noise but reduces damping
+
+### Key Takeaways
+
+**Industrial Control != Textbook Control**
+
+Academic PID implementations are clean and simple. Real-world controllers need:
+- Derivative filtering to handle noisy sensors
+- Rate limiting to protect mechanical components
+- Setpoint ramping for smooth motion and reduced wear
+- Anti-windup (already implemented)
+- Configurable features that can be enabled/disabled per application
+
+**Design Philosophy:**
+- Start with working baseline (Days 1-4)
+- Add practical features incrementally
+- Test each feature independently
+- Understand trade-offs (speed vs smoothness vs safety)
+
+**Setpoint ramping is powerful:**
+- Eliminates overshoot completely (0%)
+- Reduces peak error by 92% (22.7% → 1.9%)
+- Takes 2.8× longer but protects equipment
+- Perfect for safety-critical applications
+
+### Code Quality Improvements
+
+- Modular feature flags (enable/disable independently)
+- Clean function interfaces (`pid_set_derivative_filter()`, etc.)
+- Backward compatible (features disabled by default)
+- Well-commented implementation
+- Separate test programs for each feature
+
+### Time Spent
+~4-5 hours (attempted visualization, implemented three advanced features, testing, debugging)
+
+### Next Steps
+- Day 6: Could add data visualization with properly configured Python
+- Alternative: Move to embedded target (Arduino/STM32)
+- Alternative: Implement adaptive/auto-tuning algorithms
