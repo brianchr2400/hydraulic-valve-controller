@@ -302,3 +302,12 @@ These features are standard in:
 - `test_advanced_features.c` - Derivative filtering and rate limiting test
 - `test_setpoint_ramping.c` - Setpoint ramping demonstration
 - Enhanced `pid_controller.c/h` - Core implementations
+
+## Example Outputs
+
+Three different PID tuning configurations are included in the `/examples/` folder:
+- **tuning_kp5.0_ki4.0_kd0.1.csv** - Baseline (optimal)
+- **tuning_kp8.0_ki6.0_kd0.2.csv** - Aggressive (faster rise, oscillations)
+- **tuning_kp3.0_ki2.0_kd0.05.csv** - Conservative (stable, slower)
+
+Download and open in Excel to see how different gains affect controller performance.
